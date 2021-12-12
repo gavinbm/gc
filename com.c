@@ -35,15 +35,25 @@ struct lex {
 } typedef lex;
 
 enum {SET, IF, ELSE, DO, UNTIL, DEF, RET, LBR, RBR, LPA, RPA,
-      PLS, MIN, STR, SLH, LES, GRT, EQL, NLN, EOI};
+      PLS, MIN, STR, SLH, LES, GRT, EQL, NLN, IDE, NUM, EOI};
 
-char *keywords[] = {"set", "if", "else", "do", "until", "def", 
-                    "return", NULL};
 char *tok;
 int vars[26] = {0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0};
+
+int iskey(char *src) {
+    char *keywords[] = {"set", "if", "else", "do", 
+                        "until", "def", "return", NULL};
+
+    for(int i = 0; i < 8; i++) {
+        if(strcmp(keywords[i], src) == 0)
+            return i;
+    }
+
+    return IDE;
+}
 
 void setlex(lex **lexer, char *tok, int type, int size) {
     (*lexer)->src = malloc(size + 1);
@@ -81,6 +91,8 @@ lex *next() {
                 while(*peek >= 'a' && *peek <= 'z') {
                     peek++; len++;
                 }
+
+                setlex(&imlex, tok, iskey(tok), len + 1);
             }
             // if it's a decimal number
             else if(*tok >= '0' && *tok <= '9') {
@@ -93,6 +105,8 @@ lex *next() {
                     puts("No floating points...");
                     exit(4);
                 }
+
+                setlex(&imlex, tok, NUM, len + 1);
             }
             // invalid character encounter
             else {
@@ -100,9 +114,6 @@ lex *next() {
                 exit(1);
             }
 
-            imlex->src = malloc(len + 1);
-            memcpy(imlex->src, tok, len + 1);
-            imlex->src[len] = '\0';
             tok = peek + 1;
 
             break;
@@ -124,8 +135,9 @@ int main(int argc, char **argv) {
         while(*tok != '\0') {
             lexer = next();
             printf("[%s] -- [%d]\n", lexer->src, lexer->type);
-            if(lexer->src)
-                free(lexer->src);
+            while(*tok == ' ')
+                tok++;
+            free(lexer->src);
             free(lexer);
         }
     }
