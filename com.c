@@ -55,7 +55,7 @@ int iskey(char *src) {
     return IDE;
 }
 
-void setlex(lex **lexer, char *tok, int type, int size) {
+void initlex(lex **lexer, char *tok, int type, int size) {
     (*lexer) = malloc(sizeof(lex));
     (*lexer)->src = malloc(size + 1);
     memcpy((*lexer)->src, tok, size);
@@ -74,18 +74,18 @@ lex *next() {
         case EOF: break;
         case ' ': tok++; break;
         case '\t': tok++; break;
-        case '\n': setlex(&imlex, "\n", NLN, 1); tok++; break;
-        case '{': setlex(&imlex, tok, LBR, 1); tok++; break;
-        case '}': setlex(&imlex, tok, RBR, 1); tok++; break;
-        case '(': setlex(&imlex, tok, LPA, 1); tok++; break;
-        case ')': setlex(&imlex, tok, RPA, 1); tok++; break;
-        case '+': setlex(&imlex, tok, PLS, 1); tok++; break;
-        case '-': setlex(&imlex, tok, MIN, 1); tok++; break;
-        case '*': setlex(&imlex, tok, STR, 1); tok++; break;
-        case '/': setlex(&imlex, tok, SLH, 1); tok++; break;
-        case '<': setlex(&imlex, tok, LES, 1); tok++; break;
-        case '>': setlex(&imlex, tok, GRT, 1); tok++; break;
-        case '=': setlex(&imlex, tok, EQL, 1); tok++; break;
+        case '\n': initlex(&imlex, "\n", NLN, 1); tok++; break;
+        case '{': initlex(&imlex, tok, LBR, 1); tok++; break;
+        case '}': initlex(&imlex, tok, RBR, 1); tok++; break;
+        case '(': initlex(&imlex, tok, LPA, 1); tok++; break;
+        case ')': initlex(&imlex, tok, RPA, 1); tok++; break;
+        case '+': initlex(&imlex, tok, PLS, 1); tok++; break;
+        case '-': initlex(&imlex, tok, MIN, 1); tok++; break;
+        case '*': initlex(&imlex, tok, STR, 1); tok++; break;
+        case '/': initlex(&imlex, tok, SLH, 1); tok++; break;
+        case '<': initlex(&imlex, tok, LES, 1); tok++; break;
+        case '>': initlex(&imlex, tok, GRT, 1); tok++; break;
+        case '=': initlex(&imlex, tok, EQL, 1); tok++; break;
         default:
             // if it's a letter
             if(*tok >= 'a' && *tok <= 'z') {
@@ -94,7 +94,7 @@ lex *next() {
                 }
                 tok[len] = '\0';
          
-                setlex(&imlex, tok, iskey(tok), len + 1);
+                initlex(&imlex, tok, iskey(tok), len + 1);
             }
             // if it's a decimal number
             else if(*tok >= '0' && *tok <= '9') {
@@ -108,7 +108,7 @@ lex *next() {
                     exit(4);
                 }
 
-                setlex(&imlex, tok, NUM, len + 1);
+                initlex(&imlex, tok, NUM, len + 1);
             }
             // invalid character encounter
             else {
@@ -141,8 +141,6 @@ int main(int argc, char **argv) {
                 free(lexer->src);
                 free(lexer);
             }
-            while(*tok == ' ')
-                tok++;
         }
     }
 
