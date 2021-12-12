@@ -44,8 +44,8 @@ int vars[26] = {0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0};
 
 int iskey(char *src) {
-    char keywords[8][7] = {"set", "if", "else", "do", 
-                        "until", "def", "return", NULL};
+    char keywords[7][7] = {"set", "if", "else", "do", 
+                        "until", "def", "return"};
 
     for(int i = 0; i < 8; i++) {
         if(strcmp(keywords[i], src) == 0)
@@ -74,7 +74,7 @@ lex *next() {
         case EOF: break;
         case ' ': tok++; break;
         case '\t': tok++; break;
-        case '\n': initlex(&imlex, "\n", NLN, 1); tok++; break;
+        case '\n': initlex(&imlex, "\\n", NLN, 2); tok++; break;
         case '{': initlex(&imlex, tok, LBR, 1); tok++; break;
         case '}': initlex(&imlex, tok, RBR, 1); tok++; break;
         case '(': initlex(&imlex, tok, LPA, 1); tok++; break;
@@ -108,7 +108,7 @@ lex *next() {
                     exit(4);
                 }
 
-                initlex(&imlex, tok, NUM, len + 1);
+                initlex(&imlex, tok, NUM, len);
             }
             // invalid character encounter
             else {
