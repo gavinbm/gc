@@ -1,2 +1,10 @@
-{ ( ) + - * /
-< > = }
+do {
+    set x = 5
+    if(x = 5) {
+        howdy
+    } else {
+        ho
+    }
+
+    set a = x + 4
+} until (x < 10)

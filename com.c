@@ -44,7 +44,7 @@ int vars[26] = {0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0};
 
 int iskey(char *src) {
-    char *keywords[] = {"set", "if", "else", "do", 
+    char keywords[8][7] = {"set", "if", "else", "do", 
                         "until", "def", "return", NULL};
 
     for(int i = 0; i < 8; i++) {
@@ -56,16 +56,16 @@ int iskey(char *src) {
 }
 
 void setlex(lex **lexer, char *tok, int type, int size) {
+    (*lexer) = malloc(sizeof(lex));
     (*lexer)->src = malloc(size + 1);
     memcpy((*lexer)->src, tok, size);
-    (*lexer)->src[1] = '\0';
+    (*lexer)->src[size] = '\0';
     (*lexer)->type = type;
 }
 
 lex *next() {
 
-    lex *imlex = malloc(sizeof(lex));
-    imlex->src = NULL;
+    lex *imlex = NULL;
 
     char *peek = tok;
     int len = 0;
@@ -73,6 +73,7 @@ lex *next() {
     switch (*tok) {
         case EOF: break;
         case ' ': tok++; break;
+        case '\t': tok++; break;
         case '\n': setlex(&imlex, "\n", NLN, 1); tok++; break;
         case '{': setlex(&imlex, tok, LBR, 1); tok++; break;
         case '}': setlex(&imlex, tok, RBR, 1); tok++; break;
@@ -91,7 +92,8 @@ lex *next() {
                 while(*peek >= 'a' && *peek <= 'z') {
                     peek++; len++;
                 }
-
+                tok[len] = '\0';
+         
                 setlex(&imlex, tok, iskey(tok), len + 1);
             }
             // if it's a decimal number
@@ -134,13 +136,17 @@ int main(int argc, char **argv) {
         
         while(*tok != '\0') {
             lexer = next();
-            printf("[%s] -- [%d]\n", lexer->src, lexer->type);
+            if(lexer) {
+                printf("[%s] -- [%d]\n", lexer->src, lexer->type);
+                free(lexer->src);
+                free(lexer);
+            }
             while(*tok == ' ')
                 tok++;
-            free(lexer->src);
-            free(lexer);
         }
     }
+
+    fclose(fp);
 
     return 0;
 }
