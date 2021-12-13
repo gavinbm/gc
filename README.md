@@ -15,21 +15,21 @@ did.
 This was fun, I used what's called an "immutable lexer" which as far as I can tell from my research doesn't exist outside of [this](https://stackoverflow.com/questions/44336831/why-should-strtok-be-deprecated/) stack overflow post.
 The basic idea is that you use a struct to keep track of what would otherwise be the global state of your lexer. In previous compilers I've made the lexer generate a linked list
 of tokens that gets passed to the parser. Don't do that, that's gross, it's inefficient, you'll learn a lot about linked lists, but it takes up a lot of space. With this new
-immutable lexer, you free the lexer as you go, reducing the amount of space you're taking up.
+immutable lexer, you free the lexer as you go, reducing the amount of space you're taking up at any given time. You also free yourself of having to iterate through the tokens list, you just parse them as you go.
 
 The immutable lexer struct itself looks like this in the code
-
 ```C
 struct lexer {
     char *tok;
     char *pos;
     int type;
 } typedef lexer;
-```
 
-Where tok is the current token we've extracted from the string, pos is our position in the string, and type is the type of token we've extracted. Typically this could all be
-done via globals and tbh with you, it's likely easier to do it that way. It also may be more efficient since you're not malloc'ing the lexer struct all the time, idk really,
-I just thought this was a cool idea when I read that stack overflow post so I ran with it.
+// tok  -> the actual text of the token
+// pos  -> the position in the string we're lexing
+// type -> the type associated with the token (i.e. some keyword, left-bracket, etc.)
+```
+Typically this could all be done via globals and tbh with you, it's likely easier to do it that way. It also may be more efficient since you're not malloc'ing the lexer struct all the time, but I'm not really sure, I just thought this was a cool idea when I read that stack overflow post so I ran with it.
 
 The actual lexing is done via the next() function in our code. The way this thing will work is it'll take in the old lexer, use that state to get a position, then create and 
 return a new lexer with the next token, the updated position, and the new type information. As I'm writing this I'm realizing that this is just a lexeme struct with a pointer
