@@ -1,5 +1,5 @@
 # EZ Lang!
-=========================
+
 This is the repo for the EZ programming language, made by a college senior who finally has some free time now that the semester is ending. ez started as a very small subset of C
 but after conversing with some of my friends who don't study computer science or do programming, I found that some language constructs I hadn't considered were more intuitive
 for them. Since I want people to be able to use this abomination of a language, I made those changes and now it's a bit more interesting. It'll still hopefully be, at heart, a
@@ -11,7 +11,7 @@ I'm going to break down how each major component was designed and what concepts 
 did.
 
 # The Lexer
-========================
+
 This was fun, I used what's called an "immutable lexer" which as far as I can tell from my research doesn't exist outside of [this](https://stackoverflow.com/questions/44336831/why-should-strtok-be-deprecated/) stack overflow post.
 The basic idea is that you use a struct to keep track of what would otherwise be the global state of your lexer. In previous compilers I've made the lexer generate a linked list
 of tokens that gets passed to the parser. Don't do that, that's gross, it's inefficient, you'll learn a lot about linked lists, but it takes up a lot of space. With this new
