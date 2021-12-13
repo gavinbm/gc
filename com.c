@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct lexeme {
+struct lexer {
     char *tok;
+    char *pos;
     int type;
-} typedef lexeme;
-char *pos;
+} typedef lexer;
 
 enum {SET, IF, ELSE, DO, UNTIL, DEF, RET, LBR, RBR, LPA, RPA,
       PLS, MIN, STR, SLH, LES, GRT, EQL, NLN, IDE, NUM, EOI};
@@ -47,72 +47,79 @@ char *readfile(char *filename, int *len) {
     return buffer;
 } 
 
-void initlexeme(lexeme **lexer, char *tok, int type, int size) {
-    (*lexer) = malloc(sizeof(lexeme));
+void initlexer(lexer **lexer, char *tok, int type, int size) {
+    if(*lexer == NULL)
+        (*lexer) = malloc(sizeof(lexer));
+
     (*lexer)->tok = malloc(size + 1);
     memcpy((*lexer)->tok, tok, size);
     (*lexer)->tok[size] = '\0';
     (*lexer)->type = type;
 }
 
-lexeme *next() {
+lexer *next(lexer *old) {
 
-    lexeme *new = NULL;
+    lexer *new = malloc(sizeof(lexer));
+    new->tok = NULL;
 
-    char *peek = pos;
+    char *peek = old->pos, *substr;
     int len = 0;
 
-    switch (*pos) {
+    switch (*peek) {
         case EOF: break;
-        case ' ': pos++; break;
-        case '\t': pos++; break;
-        case '\n': initlexeme(&new, "\\n", NLN, 2); pos++; break;
-        case '{': initlexeme(&new, pos, LBR, 1); pos++; break;
-        case '}': initlexeme(&new, pos, RBR, 1); pos++; break;
-        case '(': initlexeme(&new, pos, LPA, 1); pos++; break;
-        case ')': initlexeme(&new, pos, RPA, 1); pos++; break;
-        case '+': initlexeme(&new, pos, PLS, 1); pos++; break;
-        case '-': initlexeme(&new, pos, MIN, 1); pos++; break;
-        case '*': initlexeme(&new, pos, STR, 1); pos++; break;
-        case '/': initlexeme(&new, pos, SLH, 1); pos++; break;
-        case '<': initlexeme(&new, pos, LES, 1); pos++; break;
-        case '>': initlexeme(&new, pos, GRT, 1); pos++; break;
-        case '=': initlexeme(&new, pos, EQL, 1); pos++; break;
+        case ' ': peek++; break;
+        case '\t': peek++; break;
+        case '\n': initlexer(&new, "\\n", NLN, 2); peek++; break;
+        case '{': initlexer(&new, peek, LBR, 1); peek++; break;
+        case '}': initlexer(&new, peek, RBR, 1); peek++; break;
+        case '(': initlexer(&new, peek, LPA, 1); peek++; break;
+        case ')': initlexer(&new, peek, RPA, 1); peek++; break;
+        case '+': initlexer(&new, peek, PLS, 1); peek++; break;
+        case '-': initlexer(&new, peek, MIN, 1); peek++; break;
+        case '*': initlexer(&new, peek, STR, 1); peek++; break;
+        case '<': initlexer(&new, peek, LES, 1); peek++; break;
+        case '>': initlexer(&new, peek, GRT, 1); peek++; break;
+        case '=': initlexer(&new, peek, EQL, 1); peek++; break;
         default:
             // if it's a letter
-            if(*pos >= 'a' && *pos <= 'z') {
-                while(*peek >= 'a' && *peek <= 'z') {
-                    peek++; len++;
+            if(*peek >= 'a' && *peek <= 'z') {
+                while(peek[len] >= 'a' && peek[len] <= 'z') {
+                    len++;
                 }
-                pos[len] = '\0';
          
-                initlexeme(&new, pos, iskey(pos), len + 1);
+                substr = malloc(len + 1);
+                memcpy(substr, peek, len);
+                substr[len] = '\0';
+                initlexer(&new, peek, iskey(substr), len);
+                free(substr);
             }
             // if it's a decimal number
-            else if(*pos >= '0' && *pos <= '9') {
-                while(*peek >= '0' && *peek <= '9') {
-                    peek++; len++;
+            else if(*peek >= '0' && *peek <= '9') {
+                while(peek[len] >= '0' && peek[len] <= '9') {
+                    len++;
                 }
 
                 // floating points aren't supported
-                if(*peek == '.') {
+                if(peek[len] == '.') {
                     puts("No floating points...");
                     exit(4);
                 }
 
-                initlexeme(&new, pos, NUM, len);
+                initlexer(&new, peek, NUM, len);
             }
             // invalid character encounter
             else {
-                printf("invalid char [%c]\n", *pos);
+                printf("invalid char [%c]\n", *peek);
                 exit(1);
             }
 
-            pos = peek + 1;
-
+            peek = peek + len + 1;
             break;
     }
 
+    free(old->tok);
+    free(old);
+    new->pos = peek;
     return new;
 }
 
@@ -123,18 +130,22 @@ int main(int argc, char **argv) {
 
     if(input) {
         input[length] = '\0';
-        pos = input;
-        lexeme *lex;
+        lexer *lex = malloc(sizeof(lexer));
+        lex->tok = NULL;
+        lex->pos = input;
 
-        while(*pos != '\0') {
+        while(1) {
             lex = next(lex);
-            if(lex) {
-                printf("[%s] -- [%d]\n", lex->tok, lex->type);
-                free(lex->tok);
-                free(lex);
+            if(lex->pos[0] != '\0') {
+                if(lex->tok)
+                    printf("[%s] -- [%d]\n", lex->tok, lex->type);
+            } else {
+                break;
             }
         }
 
+        free(lex->tok);
+        free(lex);
         free(input);
     }
 
