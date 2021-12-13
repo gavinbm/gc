@@ -14,3 +14,26 @@
 <id>         ::= "a" | "b" | "c" | "d" | ... | "z"
 <int>        ::= <an_unsigned_decimal_integer>
 <nl>         ::= newline
+
+variables: we're using the set keyword
+    set x = y
+
+functions: we're using def like this
+    def myfunc(argv) {
+        code...
+    }
+
+conditionals: basic if else structure
+    if (condition) then {
+        code a...
+    } else {
+        code b...
+    }
+
+call funcs: standard, nothing changes
+    myfunc(argv)
+
+iteration: we're using do loops of the following syntax:
+    do {
+        code...
+    } until (COND)

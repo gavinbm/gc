@@ -2,42 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-/*
-    variables: we're using the set keyword
-        set x = y
-    
-    functions: we're using def like this
-        def myfunc(argv) {
-            code...
-        }
-    
-    conditionals: basic if else structure
-        if (condition) then {
-            code a...
-        } else {
-            code b...
-        }
-
-    call funcs: standard, nothing changes
-        myfunc(argv)
-
-    iteration: we're using do loops of the following syntax:
-        do {
-            code...
-        } until (COND)
-    
-*/
-
-struct lex {
-    char *src;
+struct lexeme {
+    char *tok;
     int type;
-} typedef lex;
+} typedef lexeme;
+char *pos;
 
 enum {SET, IF, ELSE, DO, UNTIL, DEF, RET, LBR, RBR, LPA, RPA,
       PLS, MIN, STR, SLH, LES, GRT, EQL, NLN, IDE, NUM, EOI};
 
-char *tok;
 int vars[26] = {0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -47,7 +20,7 @@ int iskey(char *src) {
     char keywords[7][7] = {"set", "if", "else", "do", 
                         "until", "def", "return"};
 
-    for(int i = 0; i < 8; i++) {
+    for(int i = 0; i < 7; i++) {
         if(strcmp(keywords[i], src) == 0)
             return i;
     }
@@ -55,49 +28,68 @@ int iskey(char *src) {
     return IDE;
 }
 
-void initlex(lex **lexer, char *tok, int type, int size) {
-    (*lexer) = malloc(sizeof(lex));
-    (*lexer)->src = malloc(size + 1);
-    memcpy((*lexer)->src, tok, size);
-    (*lexer)->src[size] = '\0';
+char *readfile(char *filename, int *len) {
+    FILE *fp = fopen(filename, "r");
+    char *buffer = NULL;
+    long length;
+
+    if(fp) {
+        fseek(fp, 0, SEEK_END);
+        length = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+        buffer = malloc(length + 1);
+        if(buffer) {
+            fread(buffer, 1, length, fp);
+        }
+        fclose(fp);
+    }
+    *len = length;
+    return buffer;
+} 
+
+void initlexeme(lexeme **lexer, char *tok, int type, int size) {
+    (*lexer) = malloc(sizeof(lexeme));
+    (*lexer)->tok = malloc(size + 1);
+    memcpy((*lexer)->tok, tok, size);
+    (*lexer)->tok[size] = '\0';
     (*lexer)->type = type;
 }
 
-lex *next() {
+lexeme *next() {
 
-    lex *imlex = NULL;
+    lexeme *new = NULL;
 
-    char *peek = tok;
+    char *peek = pos;
     int len = 0;
 
-    switch (*tok) {
+    switch (*pos) {
         case EOF: break;
-        case ' ': tok++; break;
-        case '\t': tok++; break;
-        case '\n': initlex(&imlex, "\\n", NLN, 2); tok++; break;
-        case '{': initlex(&imlex, tok, LBR, 1); tok++; break;
-        case '}': initlex(&imlex, tok, RBR, 1); tok++; break;
-        case '(': initlex(&imlex, tok, LPA, 1); tok++; break;
-        case ')': initlex(&imlex, tok, RPA, 1); tok++; break;
-        case '+': initlex(&imlex, tok, PLS, 1); tok++; break;
-        case '-': initlex(&imlex, tok, MIN, 1); tok++; break;
-        case '*': initlex(&imlex, tok, STR, 1); tok++; break;
-        case '/': initlex(&imlex, tok, SLH, 1); tok++; break;
-        case '<': initlex(&imlex, tok, LES, 1); tok++; break;
-        case '>': initlex(&imlex, tok, GRT, 1); tok++; break;
-        case '=': initlex(&imlex, tok, EQL, 1); tok++; break;
+        case ' ': pos++; break;
+        case '\t': pos++; break;
+        case '\n': initlexeme(&new, "\\n", NLN, 2); pos++; break;
+        case '{': initlexeme(&new, pos, LBR, 1); pos++; break;
+        case '}': initlexeme(&new, pos, RBR, 1); pos++; break;
+        case '(': initlexeme(&new, pos, LPA, 1); pos++; break;
+        case ')': initlexeme(&new, pos, RPA, 1); pos++; break;
+        case '+': initlexeme(&new, pos, PLS, 1); pos++; break;
+        case '-': initlexeme(&new, pos, MIN, 1); pos++; break;
+        case '*': initlexeme(&new, pos, STR, 1); pos++; break;
+        case '/': initlexeme(&new, pos, SLH, 1); pos++; break;
+        case '<': initlexeme(&new, pos, LES, 1); pos++; break;
+        case '>': initlexeme(&new, pos, GRT, 1); pos++; break;
+        case '=': initlexeme(&new, pos, EQL, 1); pos++; break;
         default:
             // if it's a letter
-            if(*tok >= 'a' && *tok <= 'z') {
+            if(*pos >= 'a' && *pos <= 'z') {
                 while(*peek >= 'a' && *peek <= 'z') {
                     peek++; len++;
                 }
-                tok[len] = '\0';
+                pos[len] = '\0';
          
-                initlex(&imlex, tok, iskey(tok), len + 1);
+                initlexeme(&new, pos, iskey(pos), len + 1);
             }
             // if it's a decimal number
-            else if(*tok >= '0' && *tok <= '9') {
+            else if(*pos >= '0' && *pos <= '9') {
                 while(*peek >= '0' && *peek <= '9') {
                     peek++; len++;
                 }
@@ -108,44 +100,43 @@ lex *next() {
                     exit(4);
                 }
 
-                initlex(&imlex, tok, NUM, len);
+                initlexeme(&new, pos, NUM, len);
             }
             // invalid character encounter
             else {
-                printf("invalid char [%c]\n", *tok);
+                printf("invalid char [%c]\n", *pos);
                 exit(1);
             }
 
-            tok = peek + 1;
+            pos = peek + 1;
 
             break;
     }
 
-    return imlex;
+    return new;
 }
 
 int main(int argc, char **argv) {
 
-    FILE *fp = fopen(argv[1], "r");
-    char buffer[128];
-    lex *lexer;
+    int length;
+    char *input = readfile(argv[1], &length);
 
-    while(fgets(buffer, 128, fp) != NULL) {
-        buffer[strlen(buffer)] = '\0';
-        tok = buffer;
-        
-        while(*tok != '\0') {
-            lexer = next();
-            if(lexer) {
-                printf("[%s] -- [%d]\n", lexer->src, lexer->type);
-                free(lexer->src);
-                free(lexer);
+    if(input) {
+        input[length] = '\0';
+        pos = input;
+        lexeme *lex;
+
+        while(*pos != '\0') {
+            lex = next(lex);
+            if(lex) {
+                printf("[%s] -- [%d]\n", lex->tok, lex->type);
+                free(lex->tok);
+                free(lex);
             }
         }
-    }
 
-    fclose(fp);
+        free(input);
+    }
 
     return 0;
 }
-
