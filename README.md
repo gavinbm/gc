@@ -10,6 +10,57 @@ told you I'd cover it). All in all this is really just a continuation of my stud
 I'm going to break down how each major component was designed and what concepts I tried implementing and how they went. Hopefully someone learns from this as much or more than I
 did.
 
+# The Language and Grammar
+
+My goal is to make a simple language that people find intuitive to use for general purpose tasks, though later it will be specialized to be intuitive for systems programming, targeting ARM processors or some ARM processor in particular. Here is the full grammar and some code examples
+
+```
+<program>    ::= <stmnt>
+<stmnt>      ::= "set" <id> "=" <expr> <nl>
+               | "if" <paren_expr> "{" <stmnt> "}" 
+               | "if" <paren_expr> "{" <stmnt> "}" "else" "{" <stmnt> "{"
+               | "do" "{" <stmnt> "}" "until" <paren_expr>
+               | "def" <id> "(" <argv> ")" "{" <stmnt> "}"
+               | <nl>
+<paren_expr> ::= "(" <expr> ")"
+<argv>       ::= list of comma separated identifiers
+<expr>       ::= <test> | <id> "=" <expr>
+<test>       ::= <sum> | <sum> "<" <sum>
+<sum>        ::= <term> | <sum> "+" <term> | <sum> "-" <term>
+<term>       ::= <id> | <int> | <paren_expr>
+<id>         ::= "a" | "b" | "c" | "d" | ... | "z"
+<int>        ::= <an_unsigned_decimal_integer>
+<nl>         ::= newline
+
+--------------------------------------------------------
+ --- Examples of doing basic things in the language ---
+--------------------------------------------------------
+variables: we're using the set keyword
+    set x = y
+
+functions: we're using def like this
+    def myfunc(argv) {
+        code...
+    }
+
+conditionals: basic if-else structure
+    if (condition) then {
+        code a...
+    } else {
+        code b...
+    }
+
+call funcs: standard, nothing changes
+    myfunc(argv)
+
+iteration: we're using do loops of the following syntax:
+    do {
+        code...
+    } until (condition)
+```
+
+I decided on this style from a few conversations I had with friends of mine who have no programming or computer science experience. Honestly I was most surprised that the curly braces were preferred and didn't confuse anyone, I was told they did a good job of compartmentalizing the code into sections.
+
 # The Lexer
 
 This was fun, I used what's called an "immutable lexer" which as far as I can tell from my research doesn't exist outside of [this](https://stackoverflow.com/questions/44336831/why-should-strtok-be-deprecated/) stack overflow post.

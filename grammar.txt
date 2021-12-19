@@ -15,6 +15,9 @@
 <int>        ::= <an_unsigned_decimal_integer>
 <nl>         ::= newline
 
+--------------------------------------------------------
+ --- Examples of doing basic things in the language ---
+--------------------------------------------------------
 variables: we're using the set keyword
     set x = y
 
