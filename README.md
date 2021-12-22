@@ -71,14 +71,10 @@ immutable lexer, you free the lexer as you go, reducing the amount of space you'
 The immutable lexer struct itself looks like this in the code
 ```C
 struct lexer {
-    char *tok;
-    char *pos;
-    int type;
+    char *tok;  // the actual text of the token
+    char *pos;  // the position in the string we're lexing
+    int type;   // the lexeme type of the token (i.e. keyword, bracket, etc.)
 } typedef lexer;
-
-// tok  -> the actual text of the token
-// pos  -> the position in the string we're lexing
-// type -> the type associated with the token (i.e. some keyword, left-bracket, etc.)
 ```
 Typically this could all be done via globals and tbh with you, it's likely easier to do it that way. It also may be more efficient since you're not malloc'ing the lexer struct all the time, but I'm not really sure, I just thought this was a cool idea when I read that stack overflow post so I ran with it.
 
