@@ -17,9 +17,9 @@ My goal is to make a simple language that people find intuitive to use for gener
 ```
 <program>    ::= <stmnt>
 <stmnt>      ::= "set" <id> "=" <expr> <nl>
-               | "if(" <expr> ")" "{" <stmnt> "}" 
-               | "if(" <expr> ")" "{" <stmnt> "}" "else" "{" <stmnt> "{"
-               | "do" "{" <stmnt> "}" "until(" <expr> ")"
+               | "if(" <test> ")" "{" <stmnt> "}" 
+               | "if(" <test> ")" "{" <stmnt> "}" "else" "{" <stmnt> "{"
+               | "do" "{" <stmnt> "}" "until(" <test> ")"
                | "def" <id> "(" <argv> ")" "{" <stmnt> "}"
                | <nl>
 <argv>       ::= list of comma separated identifiers
