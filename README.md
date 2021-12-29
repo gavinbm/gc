@@ -17,19 +17,17 @@ My goal is to make a simple language that people find intuitive to use for gener
 ```
 <program>    ::= <stmnt>
 <stmnt>      ::= "set" <id> "=" <expr> <nl>
-               | "if" <paren_expr> "{" <stmnt> "}" 
-               | "if" <paren_expr> "{" <stmnt> "}" "else" "{" <stmnt> "{"
-               | "do" "{" <stmnt> "}" "until" <paren_expr>
+               | "if(" <expr> ")" "{" <stmnt> "}" 
+               | "if(" <expr> ")" "{" <stmnt> "}" "else" "{" <stmnt> "{"
+               | "do" "{" <stmnt> "}" "until(" <expr> ")"
                | "def" <id> "(" <argv> ")" "{" <stmnt> "}"
                | <nl>
-<paren_expr> ::= "(" <expr> ")"
 <argv>       ::= list of comma separated identifiers
-<expr>       ::= <test> | <id> "=" <expr>
-<test>       ::= <sum> | <sum> "<" <sum>
-<sum>        ::= <term> | <sum> "+" <term> | <sum> "-" <term>
-<term>       ::= <id> | <int> | <paren_expr>
+<test>       ::= <expr> (("!" | "<" | ">") expr)+
+<expr>       ::= {(} term {("-" | "+") term} {)}
+term         ::= unary {( "/" | "*" ) unary}
+unary        ::= ["+" | "-"] primary
 <id>         ::= "a" | "b" | "c" | "d" | ... | "z"
-<int>        ::= <an_unsigned_decimal_integer>
 <nl>         ::= newline
 
 --------------------------------------------------------
