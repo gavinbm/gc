@@ -81,6 +81,20 @@ The actual lexing is done via the next() function in our code. The way this thin
 return a new lexer with the next token, the updated position, and the new type information. As I'm writing this I'm realizing that this is just a lexeme struct with a pointer
 to the string position slammed in it, which seems a bit lame but whatever, the code is written.
 ```C
+// utility funtion that will initailize a new lexer given the pointer to where
+// the new lexer will be stored, the token, the type of the token, and the size
+// of the token (i.e. length).
+void initlexer(lexer **lexer, char *tok, int type, int size) {
+    if(*lexer == NULL)
+        (*lexer) = malloc(sizeof(lexer));
+
+    (*lexer)->tok = malloc(size + 1);
+    memcpy((*lexer)->tok, tok, size);
+    (*lexer)->tok[size] = '\0';
+    (*lexer)->type = type;
+}
+
+
 lexer *next(lexer *old) {
 
     lexer *new = malloc(sizeof(lexer));
