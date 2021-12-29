@@ -24,10 +24,11 @@ My goal is to make a simple language that people find intuitive to use for gener
                | <nl>
 <argv>       ::= list of comma separated identifiers
 <test>       ::= <expr> (("!" | "<" | ">") expr)+
-<expr>       ::= {(} term {("-" | "+") term} {)}
-term         ::= unary {( "/" | "*" ) unary}
-unary        ::= ["+" | "-"] primary
+<expr>       ::= {(} <term> {("-" | "+") <term>} {)}
+<term>       ::= <unary> {( "/" | "*" ) <unary>}
+<unary>      ::= ["+" | "-"] (id | int)
 <id>         ::= "a" | "b" | "c" | "d" | ... | "z"
+<int>        ::= unsigned decimal integer
 <nl>         ::= newline
 
 --------------------------------------------------------
