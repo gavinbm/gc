@@ -94,7 +94,8 @@ void initlexer(lexer **lexer, char *tok, int type, int size) {
     (*lexer)->type = type;
 }
 
-
+// eats the current lexer and returns a new one with the updated pos, token,
+// and other lexeme info that the parser will need to build the syntax tree
 lexer *next(lexer *old) {
 
     lexer *new = malloc(sizeof(lexer));
