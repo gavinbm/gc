@@ -28,22 +28,28 @@ int iskey(char *src) {
     return IDE;
 }
 
-char *readfile(char *filename, int *len) {
+char *readfile(char *filename) {
     FILE *fp = fopen(filename, "r");
-    char *buffer = NULL;
-    long length;
+    char *buffer = NULL, c;
+    int length = 0, i = 0;
 
-    if(fp) {
-        fseek(fp, 0, SEEK_END);
-        length = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
+    while((c = fgetc(fp)) != EOF)
+        length++;  
+    
+    if(length) {
+        rewind(fp);
         buffer = malloc(length + 1);
-        if(buffer) {
-            fread(buffer, 1, length, fp);
-        }
+        
+        while((c = fgetc(fp)) != EOF)
+            buffer[i++] = c;
+        
+        buffer[length] = '\0';
         fclose(fp);
+    } else {
+        puts("couldn't read file...");
+        exit(50);
     }
-    *len = length;
+
     return buffer;
 } 
 
@@ -125,11 +131,9 @@ lexer *next(lexer *old) {
 
 int main(int argc, char **argv) {
 
-    int length;
-    char *input = readfile(argv[1], &length);
+    char *input = readfile(argv[1]);
 
     if(input) {
-        input[length] = '\0';
         lexer *lex = malloc(sizeof(lexer));
         lex->tok = NULL;
         lex->pos = input;
