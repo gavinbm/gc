@@ -37,7 +37,7 @@ char *readfile(char *filename) {
         length++;  
     
     if(length) {
-        rewind(fp);
+        fseek(fp, 0L, SEEK_SET);
         buffer = malloc(length + 1);
         
         while((c = fgetc(fp)) != EOF)
