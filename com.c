@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 struct lexer {
     char *tok;
@@ -16,12 +15,33 @@ int vars[26] = {0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0};
 
+/* I wrote these to avoid including string.h, there's no meaningful benefit other than
+   the experience gained from writing these myself
+*/
+int streq(char *str1, char *str2) {
+    char *s1 = str1, *s2 = str2, c1 = *s1, c2 = *s2;
+    
+    while(c1 == c2) {
+        c1 = *s1++; 
+        c2 = *s2++;
+        if(c1 == '\0')
+            return c1 - c2;
+    }
+
+    return c1 - c2;
+}
+
+void memcopy(char *dest, char *src, int len) {
+    for(int i = 0; i < len; i++)
+        dest[i] = src[i];
+}
+
 int iskey(char *src) {
     char keywords[7][7] = {"set", "if", "else", "do", 
                         "until", "def", "return"};
 
     for(int i = 0; i < 7; i++) {
-        if(strcmp(keywords[i], src) == 0)
+        if(streq(keywords[i], src) == 0)
             return i;
     }
 
@@ -58,7 +78,7 @@ void initlexer(lexer **lexer, char *tok, int type, int size) {
         (*lexer) = malloc(sizeof(lexer));
 
     (*lexer)->tok = malloc(size + 1);
-    memcpy((*lexer)->tok, tok, size);
+    memcopy((*lexer)->tok, tok, size);
     (*lexer)->tok[size] = '\0';
     (*lexer)->type = type;
 }
@@ -94,7 +114,7 @@ lexer *next(lexer *old) {
                 }
          
                 substr = malloc(len + 1);
-                memcpy(substr, peek, len);
+                memcopy(substr, peek, len);
                 substr[len] = '\0';
                 initlexer(&new, peek, iskey(substr), len);
                 free(substr);

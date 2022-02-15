@@ -1,11 +1,8 @@
-# EZ Lang!
+# YABL - Yet Another Bad Language
 
-This is the repo for the EZ programming language, made by a college senior who finally has some free time now that the semester is ending. ez started as a very small subset of C
+This started as a very small subset of C
 but after conversing with some of my friends who don't study computer science or do programming, I found that some language constructs I hadn't considered were more intuitive
-for them. Since I want people to be able to use this abomination of a language, I made those changes and now it's a bit more interesting. It'll still hopefully be, at heart, a
-systems language (i.e. gives you access to pointers) but likely with more going on under the hood than C. As of right now this will likely end up as an interpreted language
-(yes I understand that conflicts with the systems language thing, I'll cover that in a second) with the eventual goal of it compiling to the THUMB subset of ARM assembly (see? 
-told you I'd cover it). All in all this is really just a continuation of my study of compilers and a way for me to improve.
+for them. Since I want people to be able to use this abomination of a language, I made those changes and now it's a bit more interesting. It'll still hopefully be, at heart, C with training wheels. As of right now I'm not sure if this will be compiled to proper assembly or some LLVM type bytecode. All in all this is really just a continuation of my study of compilers and a way for me to improve.
 
 I'm going to break down how each major component was designed and what concepts I tried implementing and how they went. Hopefully someone learns from this as much or more than I
 did.
@@ -16,7 +13,7 @@ My goal is to make a simple language that people find intuitive to use for gener
 
 ```
 <program>    ::= <stmnt>
-<stmnt>      ::= "set" <id> "=" <expr> <nl>
+<stmnt>      ::= "set" <ident> "=" <expr> <nl>
                | "if(" <test> ")" "{" <stmnt> "}" 
                | "if(" <test> ")" "{" <stmnt> "}" "else" "{" <stmnt> "{"
                | "do" "{" <stmnt> "}" "until(" <test> ")"
@@ -26,9 +23,8 @@ My goal is to make a simple language that people find intuitive to use for gener
 <test>       ::= <expr> (("!" | "<" | ">") expr)+
 <expr>       ::= {(} <term> {("-" | "+") <term>} {)}
 <term>       ::= <unary> {( "/" | "*" ) <unary>}
-<unary>      ::= ["+" | "-"] (id | int)
-<id>         ::= "a" | "b" | "c" | "d" | ... | "z"
-<int>        ::= unsigned decimal integer
+<unary>      ::= ["+" | "-"] primary
+<primary>    ::= number | ident
 <nl>         ::= newline
 
 --------------------------------------------------------
@@ -163,5 +159,4 @@ lexer *next(lexer *old) {
 }
 ```
 
-All in all the immutable lexer technique seems pretty cool. I think this would be better suited to a language like Java which pretty much enforces the use of structures (classes 
-are just structs with function pointers and you can't convince me I'm wrong about that) but it's still been a neat way to really think about how my lexer is working.
+All in all the immutable lexer technique seems pretty cool. I'm not sure if it's really more efficient though. The amount of malloc interactions probably slows it down quite a bit when compared to just using global variables. Still a neat exercise in lexer writing.
