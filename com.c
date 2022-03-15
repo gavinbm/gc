@@ -119,7 +119,7 @@ lexer *next(lexer *old) {
                 initlexer(&new, peek, iskey(substr), len);
                 free(substr);
             }
-            // if it's a decimal number
+            // if it's a number
             else if(*peek >= '0' && *peek <= '9') {
                 while(peek[len] >= '0' && peek[len] <= '9') {
                     len++;
