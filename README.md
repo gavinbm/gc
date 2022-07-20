@@ -1,162 +1,27 @@
-# YABL - Yet Another Bad Language
+# Blua -- Basic Lua
 
-This started as a very small subset of C
-but after conversing with some of my friends who don't study computer science or do programming, I found that some language constructs I hadn't considered were more intuitive
-for them. Since I want people to be able to use this abomination of a language, I made those changes and now it's a bit more interesting. It'll still hopefully be, at heart, C with training wheels. As of right now I'm not sure if this will be compiled to proper assembly or some LLVM type bytecode. All in all this is really just a continuation of my study of compilers and a way for me to improve.
+Kind of a cross between my [tinybasic project](https://github.com/gavinbm/tinybasic) (shout out to Dr. Henley) and a subset of Lua. I think lua is a syntactically pretty language (i.e. I like the "end" keyword) and I like the simplicity of basic.
 
-I'm going to break down how each major component was designed and what concepts I tried implementing and how they went. Hopefully someone learns from this as much or more than I
-did.
+Hopefully I get this on a website of it's own so people can toy with it. Final goal is to target wasm as I've recently been enjoying reading about [this project](https://blog.scottlogic.com/2019/05/17/webassembly-compiler.html) 
 
-# The Language and Grammar
-
-My goal is to make a simple language that people find intuitive to use for general purpose tasks, though later it will be specialized to be intuitive for systems programming, targeting ARM processors or some ARM processor in particular. Here is the full grammar and some code examples
-
+# Grammar
+Here is the full grammar, features and full specs coming soon
 ```
-<program>    ::= <stmnt>
-<stmnt>      ::= "set" <ident> "=" <expr> <nl>
-               | "if(" <test> ")" "{" <stmnt> "}" 
-               | "if(" <test> ")" "{" <stmnt> "}" "else" "{" <stmnt> "{"
-               | "do" "{" <stmnt> "}" "until(" <test> ")"
-               | "def" <id> "(" <argv> ")" "{" <stmnt> "}"
-               | <nl>
-<argv>       ::= list of comma separated identifiers
-<test>       ::= <expr> (("!" | "<" | ">") expr)+
-<expr>       ::= {(} <term> {("-" | "+") <term>} {)}
-<term>       ::= <unary> {( "/" | "*" ) <unary>}
-<unary>      ::= ["+" | "-"] primary
-<primary>    ::= number | ident
-<nl>         ::= newline
-
---------------------------------------------------------
- --- Examples of doing basic things in the language ---
---------------------------------------------------------
-variables: we're using the set keyword
-    set x = y
-
-functions: we're using def like this
-    def myfunc(argv) {
-        code...
-    }
-
-conditionals: basic if-else structure
-    if (condition) then {
-        code a...
-    } else {
-        code b...
-    }
-
-call funcs: standard, nothing changes
-    myfunc(argv)
-
-iteration: we're using do loops of the following syntax:
-    do {
-        code...
-    } until (condition)
+prog      ::= {stmnt}
+stmnt     ::= comment
+            | ("LOCAL" | "GLOBAL") ident {"=" expr}
+            | ("LOCAL" | "GLOBAL") "FUNCTION" ident "(" argv ")" {stmnt} "END"
+            | ident "=" expr
+            | ident "(" argv ")"
+            | "IF" comp "THEN" {stmnt} "END"
+            | "IF" comp "THEN" {stmnt} "ELSE" {stmnt} "END"
+            | "WHILE" comp "DO" {stmnt} "END"
+            | "GOTO" expr
+comment   ::= "#" a string
+comp      ::= expr (("=" | "!" | ">" | "<") expr)+
+expr      ::= term {( "-" | "+" ) term}
+term      ::= unary {( "/" | "*" ) unary}
+unary     ::= ["+" | "-"] primary
+primary   ::= number | ident
+argv      ::= comma separated idents
 ```
-
-I decided on this style from a few conversations I had with friends of mine who have no programming or computer science experience. Honestly I was most surprised that the curly braces were preferred and didn't confuse anyone, I was told they did a good job of compartmentalizing the code into sections.
-
-# The Lexer
-
-This was fun, I used what's called an "immutable lexer" which as far as I can tell from my research doesn't exist outside of [this](https://stackoverflow.com/questions/44336831/why-should-strtok-be-deprecated/) stack overflow post.
-The basic idea is that you use a struct to keep track of what would otherwise be the global state of your lexer. In previous compilers I've made the lexer generate a linked list
-of tokens that gets passed to the parser. Don't do that, that's gross, it's inefficient, you'll learn a lot about linked lists, but it takes up a lot of space. With this new
-immutable lexer, you free the lexer as you go, reducing the amount of space you're taking up at any given time. You also free yourself of having to iterate through the tokens list, you just parse them as you go.
-
-The immutable lexer struct itself looks like this in the code
-```C
-struct lexer {
-    char *tok;  // the actual text of the token
-    char *pos;  // the position in the string we're lexing
-    int type;   // the lexeme type of the token (i.e. keyword, bracket, etc.)
-} typedef lexer;
-```
-Typically this could all be done via globals and tbh with you, it's likely easier to do it that way. It also may be more efficient since you're not malloc'ing the lexer struct all the time, but I'm not really sure, I just thought this was a cool idea when I read that stack overflow post so I ran with it.
-
-The actual lexing is done via the next() function in our code. The way this thing will work is it'll take in the old lexer, use that state to get a position, then create and 
-return a new lexer with the next token, the updated position, and the new type information. As I'm writing this I'm realizing that this is just a lexeme struct with a pointer
-to the string position slammed in it, which seems a bit lame but whatever, the code is written.
-```C
-// utility funtion that will initailize a new lexer given the pointer to where
-// the new lexer will be stored, the token, the type of the token, and the size
-// of the token (i.e. length).
-void initlexer(lexer **lexer, char *tok, int type, int size) {
-    if(*lexer == NULL)
-        (*lexer) = malloc(sizeof(lexer));
-
-    (*lexer)->tok = malloc(size + 1);
-    memcpy((*lexer)->tok, tok, size);
-    (*lexer)->tok[size] = '\0';
-    (*lexer)->type = type;
-}
-
-// eats the current lexer and returns a new one with the updated pos, token,
-// and other lexeme info that the parser will need to build the syntax tree
-lexer *next(lexer *old) {
-
-    lexer *new = malloc(sizeof(lexer));
-    new->tok = NULL;
-
-    char *peek = old->pos, *substr;
-    int len = 0;
-
-    switch (*peek) {
-        case EOF: break;
-        case ' ': peek++; break;
-        case '\t': peek++; break;
-        case '\n': initlexer(&new, "\\n", NLN, 2); peek++; break;
-        case '{': initlexer(&new, peek, LBR, 1); peek++; break;
-        case '}': initlexer(&new, peek, RBR, 1); peek++; break;
-        case '(': initlexer(&new, peek, LPA, 1); peek++; break;
-        case ')': initlexer(&new, peek, RPA, 1); peek++; break;
-        case '+': initlexer(&new, peek, PLS, 1); peek++; break;
-        case '-': initlexer(&new, peek, MIN, 1); peek++; break;
-        case '*': initlexer(&new, peek, STR, 1); peek++; break;
-        case '<': initlexer(&new, peek, LES, 1); peek++; break;
-        case '>': initlexer(&new, peek, GRT, 1); peek++; break;
-        case '=': initlexer(&new, peek, EQL, 1); peek++; break;
-        default:
-            // if it's a letter
-            if(*peek >= 'a' && *peek <= 'z') {
-                while(peek[len] >= 'a' && peek[len] <= 'z') {
-                    len++;
-                }
-         
-                substr = malloc(len + 1);
-                memcpy(substr, peek, len);
-                substr[len] = '\0';
-                initlexer(&new, peek, iskey(substr), len);
-                free(substr);
-            }
-            // if it's a decimal number
-            else if(*peek >= '0' && *peek <= '9') {
-                while(peek[len] >= '0' && peek[len] <= '9') {
-                    len++;
-                }
-
-                // floating points aren't supported
-                if(peek[len] == '.') {
-                    puts("No floating points...");
-                    exit(4);
-                }
-
-                initlexer(&new, peek, NUM, len);
-            }
-            // invalid character encounter
-            else {
-                printf("invalid char [%c]\n", *peek);
-                exit(1);
-            }
-
-            peek = peek + len + 1;
-            break;
-    }
-
-    free(old->tok);
-    free(old);
-    new->pos = peek;
-    return new;
-}
-```
-
-All in all the immutable lexer technique seems pretty cool. I'm not sure if it's really more efficient though. The amount of malloc interactions probably slows it down quite a bit when compared to just using global variables. Still a neat exercise in lexer writing.
