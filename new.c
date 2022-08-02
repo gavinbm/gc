@@ -34,7 +34,7 @@ enum {LPAREN, RPAREN, PLUS, MINUS, STAR, SLASH, POWER, GREAT,
       LOCAL, GLOBAL, IF, THEN, ELSE, WHILE, DO, GOTO, FUNCTION, END};
 
 char *pos, tok[64];
-int type, line = 0, val;
+int type, line = 0, scope = 0, val;
 
 /*  lexer  */
 void lexical_error() {
@@ -55,7 +55,7 @@ int iskey(char *s) {
 }
 
 void skipws() {
-    while(*pos == ' ' || *pos == '\n') {
+    while(*pos == ' ' || *pos == '\n' || *pos == '\t' || *pos == '\r') {
         if(*pos == '\n') { line++;}
         pos++;
     }
@@ -105,18 +105,48 @@ void next() {
 }
 
 /* symbol table */
+enum {VAR, FUNC, PARAM};
+
 typedef struct sym {
     char name[64];
     int value;
     int scope;
+    int type;
 } sym;
 
-int isvar(char *s) {
+sym syms[128];
 
+void initsyms() {
+    for(int i = 0; i < 128; i++)
+        syms[i].type = -1;
+}
+
+void addsym(char *n, int v, int s, int t) {
+    int i = 0, l = strlen(n);
+    if(l > 63) {printf("too many chars in name [%s]...\n", n); exit(4);}
+
+    while(syms[i].type != -1) {i++;}
+
+    memcpy(syms[i].name, n, l);
+    syms[i].value = v; syms[i].scope = s; syms[i].type = t; 
+}
+
+int isvar(char *s) {
+    for(int i = 1; i < 128; i++) {
+        if(strcmp(syms[i].name, s) == 0 && syms[i].type == VAR)
+            return i;
+    }
+
+    return 0;
 }
 
 int isfunc(char *s) {
+    for(int i = 1; i < 128; i++) {
+        if(strcmp(syms[i].name, s) == 0 && syms[i].type == FUNC)
+            return i;
+    }
 
+    return 0;
 }
 
 /*  parser  */
@@ -133,12 +163,10 @@ void match(int t) {
 void primary() {
     puts("PRIMARY");
     if(type == IDENT) {
-        puts("here");
         next();
     }
     else if(type == INT || type == FLOAT) {
         next();
-        printf("[%s] -- %d\n", tok, type);
     } else {
         syntax_error();
     }
@@ -147,7 +175,6 @@ void primary() {
 void unary() {
     puts("UNARY");
     if(type == MINUS || type == PLUS) {next();} 
-    
     primary();
 }
 
@@ -159,7 +186,10 @@ void term() {
 
 void expr() {
     puts("EXPR");
+     printf("%d -- %d -- [%s]\n", type, line, pos);
     term();
+    puts("jkflds");
+     printf("%d -- %d -- [%s]\n", type, line, pos);
     while(type == PLUS || type == MINUS) {next(); term();}
 }
 
@@ -180,24 +210,27 @@ void comp() {
 
 void argv() {
     puts("ARGV");
+    addsym(tok, line, scope, PARAM);
     match(IDENT);
     while(type == COMMA) {next(); match(IDENT);}
 }
 
 void stmnt() {
-    
+
     switch(type) {
         case GLOBAL:
         case LOCAL:
-            puts("VARDECL");
+            puts("DECL");
             next();
 
             if(type == FUNCTION) { // func decl
-                next(); match(IDENT);
+                next(); addsym(tok, line, scope, FUNC); match(IDENT);
                 // add ident and argv to sym table
                 match(LPAREN); argv(); match(RPAREN);
+                //printf("%d -- %s\n", type, pos);
                 while(type != END)
                     stmnt();
+                
                 match(END);
             } 
             else if(type == IDENT) { // var decl
@@ -209,6 +242,7 @@ void stmnt() {
                 } else {
                     // add var to sym table, set value to NULL
                 }
+                next();
             } else {
                 syntax_error();
             }
@@ -224,7 +258,7 @@ void stmnt() {
             } else {
                 syntax_error();
             }
-
+            next();
             break;
         case IF:
             puts("IF");
@@ -244,20 +278,18 @@ void stmnt() {
             next(); comp(); match(DO);
             while(type != END)
                 stmnt();
-            
-            match(END);
 
+            match(END);
             break;
         case GOTO:
             puts("GOTO");
-            next(); expr();
+            next(); expr(); next();
             break;
         default:
             puts("UNRECOGNIZED");
             syntax_error();
             break;
     }
-    next();
 }
 
 void prog() {
@@ -271,7 +303,7 @@ void prog() {
 int main(int argc, char **argv) {
     char *input = readfile(argv[1]);
     pos = input;
-
+    initsyms();
     prog();
 
     free(input);

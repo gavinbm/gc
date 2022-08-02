@@ -1,19 +1,19 @@
-prog      ::= {stmnt}
-stmnt     ::= comment
-            | ("LOCAL" | "GLOBAL") ident {"=" expr}
-            | ("LOCAL" | "GLOBAL") "FUNCTION" ident "(" argv ")" {stmnt} "END"
-            | ident "=" expr
-            | ident "(" argv ")"
-            | "IF" comp "THEN" {stmnt} "END"
-            | "IF" comp "THEN" {stmnt} "ELSE" {stmnt} "END"
-            | "WHILE" comp "DO" {stmnt} "END"
-            | "GOTO" expr
-comment   ::= "#" a string
-comp      ::= expr (("=" | "!" | ">" | "<") expr)+
-expr      ::= term {( "-" | "+" ) term}
-term      ::= unary {( "/" | "*" ) unary}
-unary     ::= ["+" | "-"] primary
-primary   ::= number | ident
-argv      ::= comma separated idents
+prog        ::= {stmnt}
+stmnt       ::= comment
+                | "VAR" ident {"=" expr}
+                | "FUNC" ident "(" argv ")" {stmnt} "END" 
+                | ident "=" expr
+                | ident "(" argv ")"
+                | "IF" comp "THEN" {stmnt} "END"
+                | "IF" comp "THEN" {stmnt} "ELSE" {stmnt} "END"
+                | "WHILE" comp "DO" {stmnt} "END"
+                | "GOTO" expr
+comment     ::= "#" a string
+comp        ::= expr (("=" | "!" | ">" | "<") expr)+
+expr        ::= term {( "-" | "+" ) term}
+term        ::= unary {( "/" | "*" ) unary}
+unary       ::= ["+" | "-"] primary
+primary     ::= number | ident
+argv        ::= ident {"," ident}
 
 
