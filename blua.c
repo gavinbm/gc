@@ -6,16 +6,16 @@
 /* ======================= State ======================= */
 enum {LPAREN, RPAREN, PLUS, MINUS, STAR, SLASH, POWER, GREAT,
       LESS, EQUAL, NOT, INT, FLOAT, IDENT, COMMA, 
-      VAR, IF, THEN, ELSE, WHILE, DO, GOTO, FUNCTION, END};
+      VAR, IF, THEN, ELSE, WHILE, DO, GOTO, RETURN, FUNCTION, END};
 
 char *pos, tok[32];
 int type, line = 0, val;
 /* ======================================================= */
 /* ======================= Utility ======================= */
-char errors[24][10] = {
+char errors[25][10] = {
     "LPAREN", "RPAREN", "PLUS", "MINUS", "STAR", "SLASH", "POWER", "GREAT",
     "LESS", "EQUAL", "NOT", "INT", "FLOAT", "IDENT", "COMMA", "VAR", "IF",
-    "THEN", "ELSE", "WHILE", "DO", "GOTO", "FUNCTION", "END"
+    "THEN", "ELSE", "WHILE", "DO", "GOTO", "RETURN", "FUNCTION", "END"
 };
 
 char *readfile(char *filename) {
@@ -44,10 +44,10 @@ char *readfile(char *filename) {
 } 
 
 int iskey(char *s) {
-    char words[9][6] = {"var", "if", "then", "else", "while", "do", "goto", 
-                        "func", "end"};
+    char words[10][6] = {"var", "if", "then", "else", "while", "do", "goto", 
+                        "return", "func", "end"};
     
-    for(int i = 0; i < 9; i++) {
+    for(int i = 0; i < 10; i++) {
         if(strcmp(words[i], s) == 0)
             return i + VAR;
     }
@@ -213,6 +213,10 @@ void stmnt() {
             break;
         case GOTO: // "GOTO" expr
             puts("GOTO");
+            next(); expr();
+            break;
+        case RETURN:
+            puts("RETURN");
             next(); expr();
             break;
         default:
