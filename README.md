@@ -17,6 +17,7 @@ stmnt       ::= comment
                 | "IF" comp "THEN" {stmnt} "ELSE" {stmnt} "END"
                 | "WHILE" comp "DO" {stmnt} "END"
                 | "GOTO" expr
+                | "RETURN" expr
 comment     ::= "#" a string
 comp        ::= expr (("=" | "!" | ">" | "<") expr)+
 expr        ::= term {( "-" | "+" ) term}
@@ -24,4 +25,5 @@ term        ::= unary {( "/" | "*" ) unary}
 unary       ::= ["+" | "-"] primary
 primary     ::= number | ident
 argv        ::= ident {"," ident}
+
 ```
