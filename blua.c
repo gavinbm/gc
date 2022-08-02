@@ -12,11 +12,11 @@ char *pos, tok[32];
 int type, line = 0, val;
 /* ======================================================= */
 /* ======================= Utility ======================= */
-char errors[10][23] = {
+char errors[24][10] = {
     "LPAREN", "RPAREN", "PLUS", "MINUS", "STAR", "SLASH", "POWER", "GREAT",
     "LESS", "EQUAL", "NOT", "INT", "FLOAT", "IDENT", "COMMA", "VAR", "IF",
     "THEN", "ELSE", "WHILE", "DO", "GOTO", "FUNCTION", "END"
-}
+};
 
 char *readfile(char *filename) {
     FILE *fp = fopen(filename, "r");
@@ -59,10 +59,9 @@ int iskey(char *s) {
 /* ======================= Lexer ======================= */
 void next() {
     int i = 0, key;
-    again:
     switch(*pos) {
         case '\0': case EOF: type = EOF; break;
-        case ' ': case '\n': case '\t': pos++; goto again; break;
+        case ' ': case '\n': case '\t': pos++; next(); break;
         case '#': while(*pos != '\n') {pos++;} pos++; line++; break;
         case '(': type = LPAREN; pos++; break;
         case ')': type = RPAREN; pos++; break;
@@ -81,8 +80,15 @@ void next() {
                 while(*pos >= '0' && *pos <= '9') {
                     val = val * 10 + (*pos - '0'); pos++;
                 }
+                if(*pos == '.') {
+                    while(*pos >= '0' && *pos <= '9') {
+                        val = val * 10 + (*pos - '0'); pos++;
+                    }
 
-                tok[i] = '\0'; type = INT;
+                    type = FLOAT;
+                } else {type = INT;}
+
+                tok[i] = '\0';
             }
             else if(isalpha(*pos)) {
                 while(isalpha(*pos) || *pos == '_') {
@@ -105,9 +111,12 @@ void next() {
 
 /* ===================================================== */
 /* ======================= Parser ======================= */
-void match(int t) {if(type != t) {printf("match: expected %s got %s\n", errors[t], errors[type]); exit(2);} next();}
+void match(int t) {if(type != t) {
+    printf("match: expected %s got %s\n", errors[t], errors[type]); exit(2);} 
+    next();
+}
 
-void argv() {
+void argv() { // argv ::= ident {"," ident}
     puts("ARGV");
     match(IDENT); 
     while(type == COMMA) {
@@ -115,7 +124,7 @@ void argv() {
     }
 }
 
-void primary() {
+void primary() { // primary ::= number | ident
     puts("PRIMARY");
     if(type == IDENT || type == INT || type == FLOAT)
         next();
@@ -124,7 +133,7 @@ void primary() {
     }
 }
 
-void unary() {
+void unary() { // unary ::= ["+" | "-"] primary
     puts("UNARY");
     if(type == PLUS || type == MINUS) {
         next();
@@ -132,7 +141,7 @@ void unary() {
      primary();
 }
 
-void term() {
+void term() { // term ::= unary {( "/" | "*" ) unary}
     puts("TERM");
     unary();
     while(type == SLASH || type == STAR) {
@@ -140,13 +149,13 @@ void term() {
     }
 }
 
-void expr() {
+void expr() { // expr ::= term {( "-" | "+" ) term}
     puts("EXPR");
     term();
     while(type == PLUS || type == MINUS) {next(); term();}
 }
 
-void comp() {
+void comp() { // comp ::= expr (("=" | "!" | ">" | "<") expr)+
     puts("COMP");
     expr();
     if(type == NOT || type == GREAT || type == LESS || type == EQUAL) {
@@ -160,20 +169,20 @@ void comp() {
 
 void stmnt() {
     switch(type) {
-        case VAR:
+        case VAR: // "VAR" ident {"=" expr}
             puts("VAR DEC");
             next();
             match(IDENT);
             if(type == EQUAL) { next(); expr(); }
             break;
-        case FUNCTION:
+        case FUNCTION: // "FUNC" ident "(" argv ")" {stmnt} "END" 
             puts("FUNC DEC");
             next(); match(IDENT); match(LPAREN); argv(); match(RPAREN);
             while(type != END)
                 stmnt();
             match(END);
             break;
-        case IDENT:
+        case IDENT: // ident "=" expr | ident "(" argv ")"
             puts("IDENT");
             next();
             if(type == EQUAL) {
@@ -182,7 +191,8 @@ void stmnt() {
                 next(); argv(); match(RPAREN);
             }
             break;
-        case IF:
+        case IF: // "IF" comp "THEN" {stmnt} "END" 
+                 // "IF" comp "THEN" {stmnt} "ELSE" {stmnt} "END"
             puts("IF");
             next(); comp(); match(THEN);
             while(type != END && type != ELSE)
@@ -194,14 +204,14 @@ void stmnt() {
             }
             match(END);
             break;
-        case WHILE:
+        case WHILE: // "WHILE" comp "DO" {stmnt} "END"
             puts("WHILE");
             next(); comp(); match(DO);
             while(type != END)
                 stmnt();
             match(END);
             break;
-        case GOTO:
+        case GOTO: // "GOTO" expr
             puts("GOTO");
             next(); expr();
             break;
