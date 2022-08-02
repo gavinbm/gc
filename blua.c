@@ -12,6 +12,12 @@ char *pos, tok[32];
 int type, line = 0, val;
 /* ======================================================= */
 /* ======================= Utility ======================= */
+char errors[10][23] = {
+    "LPAREN", "RPAREN", "PLUS", "MINUS", "STAR", "SLASH", "POWER", "GREAT",
+    "LESS", "EQUAL", "NOT", "INT", "FLOAT", "IDENT", "COMMA", "VAR", "IF",
+    "THEN", "ELSE", "WHILE", "DO", "GOTO", "FUNCTION", "END"
+}
+
 char *readfile(char *filename) {
     FILE *fp = fopen(filename, "r");
     char *buffer = NULL, c;
@@ -99,7 +105,7 @@ void next() {
 
 /* ===================================================== */
 /* ======================= Parser ======================= */
-void match(int t) {if(type != t) {printf("match: expected %d got %d\n", t, type); exit(2);} next();}
+void match(int t) {if(type != t) {printf("match: expected %s got %s\n", errors[t], errors[type]); exit(2);} next();}
 
 void argv() {
     puts("ARGV");
